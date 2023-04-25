@@ -1,35 +1,49 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { v4 as uuidv4 } from 'uuid';
 import useStore from '@store/store';
 
-import PlusIcon from '@icon/PlusIcon';
+import NewFolderIcon from '@icon/NewFolderIcon';
+import { Folder, FolderCollection } from '@type/chat';
 
 const NewFolder = () => {
   const { t } = useTranslation();
   const generating = useStore((state) => state.generating);
-  const setFoldersName = useStore((state) => state.setFoldersName);
-  const setFoldersExpanded = useStore((state) => state.setFoldersExpanded);
+  const setFolders = useStore((state) => state.setFolders);
 
   const addFolder = () => {
     let folderIndex = 1;
     let name = `New Folder ${folderIndex}`;
 
-    while (
-      useStore
-        .getState()
-        .foldersName.some((_folderName) => _folderName === name)
-    ) {
+    const folders = useStore.getState().folders;
+
+    while (Object.values(folders).some((folder) => folder.name === name)) {
       folderIndex += 1;
       name = `New Folder ${folderIndex}`;
     }
 
-    setFoldersName([name, ...useStore.getState().foldersName]);
-    setFoldersExpanded([false, ...useStore.getState().foldersExpanded]);
+    const updatedFolders: FolderCollection = JSON.parse(
+      JSON.stringify(folders)
+    );
+
+    const id = uuidv4();
+    const newFolder: Folder = {
+      id,
+      name,
+      expanded: false,
+      order: 0,
+    };
+
+    Object.values(updatedFolders).forEach((folder) => {
+      folder.order += 1;
+    });
+
+    setFolders({ [id]: newFolder, ...updatedFolders });
   };
 
   return (
     <a
-      className={`max-md:hidden flex py-3 px-3 items-center gap-3 rounded-md hover:bg-gray-500/10 transition-colors duration-200 text-white text-sm md:mb-2 flex-shrink-0 md:border md:border-white/20 transition-opacity ${
+      className={`flex py-3 px-3 items-center gap-3 rounded-md hover:bg-gray-500/10 transition-colors duration-200 text-white text-sm mb-2 flex-shrink-0 border border-white/20 transition-opacity ${
         generating
           ? 'cursor-not-allowed opacity-40'
           : 'cursor-pointer opacity-100'
@@ -38,10 +52,7 @@ const NewFolder = () => {
         if (!generating) addFolder();
       }}
     >
-      <PlusIcon />{' '}
-      <span className='hidden md:inline-flex text-white text-sm'>
-        {t('newFolder')}
-      </span>
+      <NewFolderIcon />
     </a>
   );
 };
